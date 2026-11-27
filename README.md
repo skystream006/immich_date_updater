@@ -12,8 +12,8 @@ Run these scripts in order:
 - Make sure your Immich server is reachable.
 - Install [ExifTool](https://exiftool.org/) and make the `exiftool` command available on your PATH for step 3.
 - Back up your original files and Immich database before step 3.
-- Filenames must contain `YYYYMMDD_HHMMSSfff`, where `fff` is milliseconds.
-  Example: `InShot_20201007_203251440.mp4`.
+- By default, filenames must contain `YYYYMMDD_HHMMSSfff`, where `fff` is milliseconds.
+  Example: `InShot_20201007_203251440.mp4`. Use `-DateFormat` in step 2 for another format.
 
 **Timezone:** filename timestamps are treated as local Eastern Standard Time,
 with a fixed `-05:00` offset all year. Daylight saving time is not applied.
@@ -109,6 +109,22 @@ Optional input and output paths:
 ```
 
 Defaults are `needDates.json` and `needDates.csv` beside the script.
+`DateFormat` defaults to `yyyyMMdd_HHmmssfff` and uses case-sensitive
+[.NET date/time format strings](https://learn.microsoft.com/dotnet/standard/base-types/custom-date-and-time-format-strings):
+`MM` means month, `mm` means minute, and `HH` means 24-hour time.
+Use a local date/time format without a timezone or UTC offset.
+
+For filenames such as `IMG_2020-10-07_20-32-51.jpg`:
+
+```powershell
+.\2_Export-AssetDates.ps1 -DateFormat 'yyyy-MM-dd_HH-mm-ss'
+```
+
+The script extracts the first valid matching timestamp in each filename,
+without starting or ending inside a longer digit sequence. Missing milliseconds
+are written as `.000`. The CSV output always uses ISO timestamps with fixed
+EST (`-05:00`), regardless of the input format.
+
 The output columns are:
 
 | Column | Value |

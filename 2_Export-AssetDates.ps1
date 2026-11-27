@@ -1,6 +1,9 @@
 param(
     [string]$JsonPath = (Join-Path $PSScriptRoot 'needDates.json'),
-    [string]$CsvPath = (Join-Path $PSScriptRoot 'needDates.csv')
+    [string]$CsvPath = (Join-Path $PSScriptRoot 'needDates.csv'),
+
+    [ValidateNotNullOrEmpty()]
+    [string]$DateFormat = 'yyyyMMdd_HHmmssfff'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,20 +26,34 @@ $rows = @(foreach ($asset in $assets) {
         }
     }
 
-    $match = [regex]::Match($asset.originalFileName, '(?<!\d)(\d{8}_\d{9})(?!\d)')
-    if (-not $match.Success) {
-        throw "No YYYYMMDD_HHMMSSfff timestamp found in '$($asset.originalFileName)' for asset $($asset.id)."
+    $fileName = $asset.originalFileName
+    $localDate = [datetime]::MinValue
+    $found = $false
+    :findDate for ($start = 0; $start -lt $fileName.Length; $start++) {
+        if ($start -gt 0 -and [char]::IsDigit($fileName[$start - 1])) {
+            continue
+        }
+
+        for ($end = $fileName.Length; $end -gt $start; $end--) {
+            if ($end -lt $fileName.Length -and [char]::IsDigit($fileName[$end])) {
+                continue
+            }
+
+            if ([datetime]::TryParseExact(
+                $fileName.Substring($start, $end - $start),
+                $DateFormat,
+                $culture,
+                [Globalization.DateTimeStyles]::None,
+                [ref]$localDate
+            )) {
+                $found = $true
+                break findDate
+            }
+        }
     }
 
-    $localDate = [datetime]::MinValue
-    if (-not [datetime]::TryParseExact(
-        $match.Groups[1].Value,
-        'yyyyMMdd_HHmmssfff',
-        $culture,
-        [Globalization.DateTimeStyles]::None,
-        [ref]$localDate
-    )) {
-        throw "Invalid filename timestamp for asset $($asset.id): $($match.Groups[1].Value)."
+    if (-not $found) {
+        throw "No valid timestamp matching '$DateFormat' found in '$fileName' for asset $($asset.id)."
     }
 
     $date = [datetimeoffset]::new($localDate, [timespan]::FromHours(-5))
