@@ -71,28 +71,19 @@ The key prompt avoids putting the key directly in a command saved to shell histo
 | `ServerUrl` | Yes | None |
 | `ApiKey` | Yes | None |
 | `AlbumId` | Yes | None |
-| `Size` | No | `1000` |
-| `Page` | No | `1` |
+| `Size` | No | `1000` (allowed: 1-1000) |
+| `Page` | No | `1` (only page 1 is allowed) |
 | `OutputPath` | No | `needDates.json` beside the script |
 
 This sends `POST /api/search/metadata` and saves formatted JSON.
 An API failure stops the script without replacing the existing output.
 A successful run replaces the output file.
 
-**Pagination:** this script fetches only one page; it does not automatically
-fetch all assets in a larger album or merge pages. Check the response's
-`assets.total` and `assets.count` before continuing. For additional pages,
-save each response separately and run steps 2 and 3 for each file:
-
-```powershell
-.\1_getAssetData.ps1 `
-    -ServerUrl $serverUrl `
-    -ApiKey $env:IMMICH_API_KEY `
-    -AlbumId $albumId `
-    -Size 1000 `
-    -Page 2 `
-    -OutputPath '.\needDates-page2.json'
-```
+**Album size limit:** this workflow is intended for albums with **1,000 or fewer
+items**. Fetch only page 1 with a size of up to 1,000 (the defaults). The script
+does not automatically fetch additional pages or merge results. Larger albums
+are rejected without replacing the output; split them into albums of 1,000 or fewer items first.
+Check that the response's `assets.count` matches `assets.total` before continuing.
 
 ## Step 2: Create and review the CSV
 
