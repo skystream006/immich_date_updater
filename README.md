@@ -130,10 +130,17 @@ missing filename timestamps, or invalid dates stop the export.
 A successful export replaces the output CSV.
 
 **Review the CSV before step 3**, especially the extracted dates and file paths.
-Paths such as `/data/library/...` are paths from the Immich server/container;
-they may not exist on your Windows computer. Run step 3 where those files are
-accessible, or adjust the CSV's `originalPath` values to the correct local paths.
-The script does not map paths automatically.
+**The API's `originalPath` may be a path inside the Immich container, not the
+actual file path on the system running the script.** For example, a container
+path such as `/data/library/photo.jpg` may correspond to a different host path
+through a Docker volume mount.
+
+Before running step 3 with ExifTool enabled, use your container's volume mappings
+to replace the CSV's `originalPath` values with paths accessible on that system,
+or run the script in an environment where the returned paths resolve correctly.
+The script does not map container paths to host paths automatically.
+Use `-no-exif` if you only want to update Immich; local file paths are not needed
+in that mode.
 
 ## Step 3: Update file metadata and Immich dates
 
