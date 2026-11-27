@@ -4,13 +4,13 @@ Run these scripts in order:
 
 1. [1_getAssetData.ps1](1_getAssetData.ps1): fetch an album's asset metadata into JSON.
 2. [2_Export-AssetDates.ps1](2_Export-AssetDates.ps1): extract filename timestamps into CSV.
-3. [3_updateAssetDates.ps1](3_updateAssetDates.ps1): update original-file metadata with ExifTool, then update Immich.
+3. [3_updateAssetDates.ps1](3_updateAssetDates.ps1): update original-file metadata with ExifTool, then update Immich (or skip ExifTool with `-no-exif`).
 
 ## Before you start
 
 - Use PowerShell and open a terminal in this folder.
 - Make sure your Immich server is reachable.
-- Install [ExifTool](https://exiftool.org/) and make the `exiftool` command available on your PATH for step 3.
+- Install [ExifTool](https://exiftool.org/) and make the `exiftool` command available on your PATH for step 3, unless using `-no-exif`.
 - Back up your original files and Immich database before step 3.
 - By default, filenames must contain `YYYYMMDD_HHMMSSfff`, where `fff` is milliseconds.
   Example: `InShot_20201007_203251440.mp4`. Use `-DateFormat` in step 2 for another format.
@@ -147,14 +147,28 @@ The script does not map paths automatically.
 `ServerUrl` and `ApiKey` are required.
 `CsvPath` defaults to `needDates.csv` beside the script.
 
+To update only Immich and bypass ExifTool:
+
+```powershell
+.\3_updateAssetDates.ps1 `
+    -ServerUrl $serverUrl `
+    -ApiKey $env:IMMICH_API_KEY `
+    -CsvPath '.\needDates.csv' `
+    -no-exif
+```
+
+`-NoExif` is also accepted. With this switch, ExifTool is not required and
+`originalPath` does not need to be accessible locally.
+
 For each CSV row, the script:
 
 1. Runs ExifTool to set the original file's `DateTimeOriginal`, using
-   `-overwrite_original`.
+   `-overwrite_original`, unless `-no-exif` is supplied.
 2. Sends `PUT /api/assets/{id}` with `dateTimeOriginal` set to `extractedDate`.
 3. Prints a progress message after the API update succeeds.
 
-**This step modifies both original files and Immich. There is no dry-run mode.**
+**By default, this step modifies both original files and Immich. There is no dry-run mode.**
+With `-no-exif`, only Immich is modified.
 ExifTool's `-overwrite_original` option does not retain an `_original` backup.
 Ensure that the files are writable and their formats support the metadata tag.
 

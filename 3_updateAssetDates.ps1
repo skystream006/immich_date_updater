@@ -8,17 +8,21 @@ param(
     [string]$ApiKey,
 
     [ValidateNotNullOrEmpty()]
-    [string]$CsvPath = (Join-Path $PSScriptRoot 'needDates.csv')
+    [string]$CsvPath = (Join-Path $PSScriptRoot 'needDates.csv'),
+
+    [Alias('no-exif')]
+    [switch]$NoExif
 )
 
 $ErrorActionPreference = 'Stop'
 
 $counter = 0
 Import-Csv -LiteralPath $CsvPath | ForEach-Object {
-    # Update the EXIF DateTimeOriginal tag of the asset's original file using ExifTool
-    & exiftool -DateTimeOriginal="$($_.extractedDate)" -overwrite_original $_.originalPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "ExifTool failed for asset $($_.id) with exit code $LASTEXITCODE."
+    if (-not $NoExif) {
+        & exiftool -DateTimeOriginal="$($_.extractedDate)" -overwrite_original $_.originalPath
+        if ($LASTEXITCODE -ne 0) {
+            throw "ExifTool failed for asset $($_.id) with exit code $LASTEXITCODE."
+        }
     }
 
     # Update the asset's dateTimeOriginal field in the server using the API
